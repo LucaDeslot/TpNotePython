@@ -1,15 +1,17 @@
 # This is a sample Python script.
 import copy
+import time
 
 
 # Press ⌃R to execute it or replace it with your code.
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 
 class Objet:
-    def __init__(self, valeur, p1, p2):
+    def __init__(self, valeur, p1, p2, id):
         self.valeur = valeur
         self.p1 = p1
         self.p2 = p2
+        self.id = id
 
 class Sac:
     def __init__(self, p1Max, p2Max):
@@ -26,9 +28,9 @@ def get_sac_from_file(path):
         with open(path, 'r') as file:
             nbObjets, p1Max, p2Max = map(int, file.readline().split())
             objets = []
-            for _ in range(nbObjets):
+            for i in range(nbObjets):
                 valeur, p1, p2 = map(int, file.readline().split())
-                objets.append(Objet(valeur, p1, p2))
+                objets.append(Objet(valeur, p1, p2, i))
             sac = Sac(p1Max, p2Max)
             return sac, objets
     except FileNotFoundError:
@@ -56,23 +58,46 @@ def put(sac, objet):
     else:
         return None
 
-def compute(sac, objets):
+
+def compute(sac, objets, memo=None):
+    if memo is None:
+        memo = {}
+
+    key = tuple(sorted(objet.id for objet in sac.objets))
+
+    if key in memo:
+        return memo[key]
+
     if len(objets) == 0:
         return sac
 
     cp_objets = copy.deepcopy(objets)
     cp_objets.pop()
-    dont_take = compute(sac, cp_objets)
+    dont_take = compute(sac, cp_objets, memo)
 
     takeSac = put(copy.deepcopy(sac), objets[-1])
     if takeSac:
-        do_take = compute(takeSac, cp_objets)
-        return max_sac(do_take, dont_take)
-
+        do_take = compute(takeSac, cp_objets, memo)
+        result = max_sac(do_take, dont_take)
     else:
-        return max_sac(copy.deepcopy(sac), dont_take)
+        result = max_sac(copy.deepcopy(sac), dont_take)
+
+    memo[key] = result
+    return result
+
 
 
 if __name__ == "__main__":
+    # Enregistrement du temps de début
+    start_time = time.time()
+
     sac, objets = get_sac_from_file("objects/pb2.txt")
-    print_sac(compute(sac, objets))
+    sac_optimal = compute(sac, objets)
+    print_sac(sac_optimal)
+
+    # Enregistrement du temps de fin
+    end_time = time.time()
+
+    # Calcul et affichage de la durée d'exécution
+    execution_time = end_time - start_time
+    print(f"\nTemps d'exécution: {execution_time} secondes")
