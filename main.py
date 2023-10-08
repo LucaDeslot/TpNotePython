@@ -1,6 +1,5 @@
 # This is a sample Python script.
 import copy
-import functools
 import time
 
 
@@ -33,13 +32,32 @@ class Sac:
             self.p2 += objet.p2
             self.objets.append(objet)
             self.valeur += objet.valeur
+            self.objets.sort(key=lambda x: x.id)
             return True
         else:
             return False
 
     def __hash__(self):
-        self.objets.sort(key=lambda x: x.id)
         return hash((self.p1Max, self.p2Max, self.p1, self.p2, self.valeur, tuple(self.objets)))
+
+    def print(self):
+        print(f"P1: {self.p1}\nP2: {self.p2}\nValeur: {self.valeur}")
+        for i, objet in enumerate(self.objets):
+            print(f"Objet {i}: {objet.valeur} {objet.p1} {objet.p2}")
+
+
+class Memoization:
+    def __init__(self):
+        self.cache = {}
+
+    def lookup(self, key):
+        return self.cache.get(key, None)
+
+    def insert(self, key, value):
+        self.cache[key] = value
+
+
+memoization = Memoization()
 
 
 def get_sac_from_file(path):
@@ -57,20 +75,19 @@ def get_sac_from_file(path):
         exit(1)
 
 
-def print_sac(sac):
-    print(f"P1: {sac.p1}\nP2: {sac.p2}\nValeur: {sac.valeur}")
-    for i, objet in enumerate(sac.objets):
-        print(f"Objet {i}: {objet.valeur} {objet.p1} {objet.p2}")
-
-
 def biggest_sac(a, b):
     return a if a.valeur >= b.valeur else b
 
 
-@functools.lru_cache(maxsize=None)
 def compute(sac, objets):
     if len(objets) == 0:
         return sac
+
+    # Utilisation du cache
+    key = (sac.__hash__(), tuple(o.id for o in objets))
+    cached_result = memoization.lookup(key)
+    if cached_result is not None:
+        return cached_result
 
     dont_take = compute(copy.deepcopy(sac), objets[:-1])
 
@@ -83,6 +100,8 @@ def compute(sac, objets):
     else:
         best_sac = dont_take
 
+    # Insertion du résultat dans le cache avant de retourner la valeur
+    memoization.insert(key, best_sac)
     return best_sac
 
 
@@ -90,9 +109,10 @@ if __name__ == "__main__":
     # Enregistrement du temps de début
     start_time = time.time()
 
-    sac, objets = get_sac_from_file("objects/pb1.txt")
+    sac, objets = get_sac_from_file("objects/pb2.txt")
     sac_optimal = compute(sac, objets)
-    print_sac(sac_optimal)
+
+    sac_optimal.print()
 
     # Enregistrement du temps de fin
     end_time = time.time()
