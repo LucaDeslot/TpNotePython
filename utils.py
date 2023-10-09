@@ -50,3 +50,14 @@ class Sac:
         print(f"P1: {self.p1}\nP2: {self.p2}\nValeur: {self.valeur}")
         for i, objet in enumerate(self.objets):
             print(f"Objet {i}: {objet.valeur} {objet.p1} {objet.p2}")
+
+
+def rearrange(best_solution, nb_objets):
+    reslut = ""
+    for i in range(nb_objets):
+        if i in best_solution:
+            reslut += "1"
+        else:
+            reslut += "0"
+
+    return reslut

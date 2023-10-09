@@ -2,9 +2,7 @@
 import copy
 import time
 
-from utils import Memoization, Objet, Sac
-
-memoization = Memoization()
+from utils import Objet, Sac
 
 
 def get_sac_from_file(path):
@@ -30,12 +28,6 @@ def compute(sac, objets):
     if len(objets) == 0:
         return sac
 
-    # Utilisation du cache
-    key = (sac.__hash__(), tuple(o.id for o in objets))
-    cached_result = memoization.lookup(key)
-    if cached_result is not None:
-        return cached_result
-
     dont_take = compute(copy.deepcopy(sac), objets[:-1])
 
     take_sac = copy.deepcopy(sac)
@@ -47,8 +39,6 @@ def compute(sac, objets):
     else:
         best_sac = dont_take
 
-    # Insertion du résultat dans le cache avant de retourner la valeur
-    memoization.insert(key, best_sac)
     return best_sac
 
 

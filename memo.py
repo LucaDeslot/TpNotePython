@@ -1,15 +1,13 @@
-import csv
-import os
 import time
 
 from bruteForce import get_sac_from_file
 from utils import Memoization
+from utils import rearrange
 
 memoization = Memoization()
 
 
 def compute_and_recover(i, p1_left, p2_left, objets, start_time, timeout, best_solution):
-    # Check if the timeout is reached
     if time.time() - start_time > timeout:
         raise TimeoutError("Timeout reached during the computation")
 
@@ -35,7 +33,6 @@ def compute_and_recover(i, p1_left, p2_left, objets, start_time, timeout, best_s
     else:
         best_value, best_items = option1_value, option1_items
 
-    # Update the best solution if it improves the current one
     if best_value > best_solution[0]:
         best_solution[0] = best_value
         best_solution[1] = best_items
@@ -48,26 +45,19 @@ def sort_objects_by_potential(objets):
     return sorted(objets, key=lambda obj: obj.valeur / (obj.p1 + obj.p2), reverse=True)
 
 
-def save_results_to_csv(results, filename):
-    headers = ["Problem", "Max_Value", "Objects_Taken", "Avg_Execution_Time"]
+def save_results_to_txt(results, problem_name):
+    # Le format de result est supposé être [problem_name, max_value, solution, timeout]
+    filename = f"sol_{problem_name}.txt"
 
-    # Check if file exists and is non-empty
-    file_exists = os.path.isfile(filename) and os.path.getsize(filename) > 0
-
-    with open(filename, mode='a', newline='') as file:
-        writer = csv.writer(file)
-
-        if not file_exists:
-            writer.writerow(headers)  # write header only if file does not exist
-
-        writer.writerows(results)
+    with open(filename, mode='a') as file:
+        # Ecrire la valeur maximale et la solution dans le fichier texte avec le format spécifié
+        file.write(f"{timeout}:{results}\n")
 
 
 if __name__ == "__main__":
-    timeouts = [10, 60, 120]  # your desired timeouts in seconds
+    timeouts = [10, 60, 120]
 
-    for i in range(1, 9):  # loop from pb1 to pb8
-        results = []
+    for i in range(1, 9):
 
         problem_name = f"pb{i}"
         file_path = f"objects/{problem_name}.txt"
@@ -76,29 +66,26 @@ if __name__ == "__main__":
         min_time = float("inf")
         max_time = 0
 
-        # These variables might also need to be updated based on the variation in multiple runs
         max_value = 0
         objects_taken = []
 
         sac, objets = get_sac_from_file(file_path)
         objets = sort_objects_by_potential(objets)
         for timeout in timeouts:
+            results = []
             start_time = time.time()
-            # Clear the cache at the beginning of each run
             memoization.cache.clear()
-            # Maintain the best solution found [value, items]
             best_solution = [0, []]
             try:
                 max_value, solution = compute_and_recover(len(objets) - 1, sac.p1Max, sac.p2Max, objets, start_time,
                                                           timeout, best_solution)
             except TimeoutError:
-                max_value, solution = best_solution  # Use the best found solution on timeout
+                max_value, solution = best_solution
             end_time = time.time()
             # Display results
             print(f"\nResults for {problem_name}:")
             print(f"\nResults with a timeout of {timeout} seconds:")
             print(f"Max value: {max_value}")
             print(f"Objects taken: {solution}")
-            results.append([problem_name, max_value, solution, timeout])
 
-            save_results_to_csv(results, "results.csv")
+            save_results_to_txt(rearrange(solution, len(objets)), problem_name)
